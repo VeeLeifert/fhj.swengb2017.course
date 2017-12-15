@@ -2,6 +2,8 @@ package at.fhj.swengb.apps.maze
 
 import java.lang
 
+import at.fhj.swengb.apps.maze.MazeProtobuf.Pos
+
 import scala.collection.JavaConverters._
 
 /**
@@ -9,14 +11,48 @@ import scala.collection.JavaConverters._
   */
 object MazeProtocol {
 
-  def convert(pos: MazeProtobuf.Pos): Pos = ???
+  def convert(coord: MazeProtobuf.Coord): Coord = Coord(coord.getX, coord.getY)
 
-  def convert(end: Pos): MazeProtobuf.Pos = MazeProtobuf.Pos.newBuilder().build()
 
-  def convert(cellRect: Rect): MazeProtobuf.Rect = MazeProtobuf.Rect.newBuilder().build()
+  def convert(pos: MazeProtobuf.Pos): Pos = Pos(pos.getX, pos.getY)
 
-  def convert(cell: Cell): MazeProtobuf.Cell = MazeProtobuf.Cell
-    .newBuilder().build
+  def convert(pos: Pos): MazeProtobuf.Pos = {
+    MazeProtobuf.Pos.newBuilder()
+      .setX(pos.x).setY(pos.y).build()
+  }
+
+  def convert(rect: MazeProtobuf.Rect): Rect = Rect(rect.getWidth, rect.getHeight)
+
+  def convert(rect: Rect): MazeProtobuf.Rect = {
+    MazeProtobuf.Rect.newBuilder().setHeight(rect.height).setWidth(rect.width).build()
+  }
+
+  def convert(topLeft: Coord): MazeProtobuf.Coord =
+    MazeProtobuf.Coord.newBuilder().setX(topLeft.x).setY(topLeft.y).build()
+
+  def convert(cell: Cell): MazeProtobuf.Cell = {
+    // enthält alle attribute ausser die Options!
+    val baseBuilder = MazeProtobuf.Cell.newBuilder()
+      .setTopLeft(convert(cell.topLeft))
+      .setPos(convert(cell.pos))
+      .setRegion(convert(cell.region))
+
+    val builder2 =
+      cell.up match {
+        case Some(pos) =>
+        // pos ist gesetzt, ich muss das ins protobuf reinkriege
+        // basebuilder benützten
+          baseBuilder.setUp(convert(pos))
+        case None =>
+        // pos ist nict gesettzt, ist NONE!!!
+        // basebuilder benützten
+          baseBuilder.setNoneUp(true)
+      }
+
+
+    builder2
+      .build
+  }
 
   /**
     * Provided a protobuf encoded maze, create a business model class 'maze' again
